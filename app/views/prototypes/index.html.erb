@@ -1,0 +1,17 @@
+<main class="main">
+  <div class="inner">
+    <% if user_signed_in? %>
+      <%# ログインしているときは以下を表示する %>
+      <div class="greeting">
+        こんにちは、
+        <%= link_to "#{current_user.name}さん", user_path(current_user), class: :greeting__link %>
+      </div>
+      <%# // ログインしているときは上記を表示する %>
+    <% else %>
+      <%# ログインしていないときは何も表示しない、または他のコンテンツを表示する %>
+    <% end %>
+    <div class="card__wrapper">
+      <%= render partial: 'prototype', collection: @prototypes, as: :prototype %>
+    </div>
+  </div>
+</main>
