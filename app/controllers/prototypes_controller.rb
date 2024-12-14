@@ -5,7 +5,10 @@ class PrototypesController < ApplicationController
   def new
     @prototype = Prototype.new
   end
-
+  def edit
+    @prototype = Prototype.find(params[:id])
+    render plain: "You are authenticated!"
+  end
   def create
     @prototype = Prototype.new(prototype_params)
     if @prototype.save
