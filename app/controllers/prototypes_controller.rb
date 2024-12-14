@@ -1,14 +1,24 @@
 class PrototypesController < ApplicationController
-  before_action :authenticate_user!, only: [:new, :create, :edit, :update, :destroy]
+  before_action :authenticate_user!, except: [:index, :show]
   before_action :ensure_correct_user, only: [:edit, :update]
+
+  def index
+    @prototypes = Prototype.includes(:user).all
+  end
+
+  def show
+    @prototype = Prototype.find_by(id: params[:id])
+    unless @prototype
+      return redirect_to root_path, alert: "プロトタイプが見つかりませんでした。"
+    end
+    @comments = @prototype.comments.includes(:user)
+    @comment = Comment.new
+  end
 
   def new
     @prototype = Prototype.new
   end
-  def edit
-    @prototype = Prototype.find(params[:id])
-    render plain: "You are authenticated!"
-  end
+
   def create
     @prototype = Prototype.new(prototype_params)
     if @prototype.save
@@ -18,22 +28,19 @@ class PrototypesController < ApplicationController
     end
   end
 
-  def index
-    @prototypes = Prototype.includes(:user).all
-  end
-
-  def show
-    @prototype = Prototype.find(params[:id])
-    @comments = @prototype.comments.includes(:user)
-    @comment = Comment.new
-  end
-
   def edit
-    @prototype = Prototype.find(params[:id])
+    @prototype = Prototype.find_by(id: params[:id])
+    unless @prototype
+      return redirect_to root_path, alert: "プロトタイプが見つかりませんでした。"
+    end
   end
 
   def update
-    @prototype = Prototype.find(params[:id])
+    @prototype = Prototype.find_by(id: params[:id])
+    unless @prototype
+      return redirect_to root_path, alert: "プロトタイプが見つかりませんでした。"
+    end
+
     if @prototype.update(prototype_params)
       redirect_to prototype_path(@prototype), notice: 'プロトタイプが更新されました！'
     else
@@ -42,7 +49,11 @@ class PrototypesController < ApplicationController
   end
 
   def destroy
-    @prototype = Prototype.find(params[:id])
+    @prototype = Prototype.find_by(id: params[:id])
+    unless @prototype
+      return redirect_to root_path, alert: "プロトタイプが見つかりませんでした。"
+    end
+
     if @prototype.destroy
       redirect_to root_path, notice: 'プロトタイプを削除しました！'
     else
@@ -56,10 +67,15 @@ class PrototypesController < ApplicationController
     params.require(:prototype).permit(:title, :catch_copy, :concept, :image).merge(user_id: current_user.id)
   end
 
-  # 投稿者以外のアクセスを制限
   def ensure_correct_user
-    @prototype = Prototype.find(params[:id])
+    @prototype = Prototype.find_by(id: params[:id])
+    unless @prototype
+      Rails.logger.error("Prototype with id=#{params[:id]} not found")
+      return redirect_to root_path, alert: 'プロトタイプが見つかりませんでした。'
+    end
+
     unless @prototype.user == current_user
+      Rails.logger.error("User #{current_user.id} tried to access Prototype #{@prototype.id}, which they do not own.")
       redirect_to root_path, alert: '権限がありません。'
     end
   end
